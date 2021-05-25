@@ -1,5 +1,6 @@
 import urllib.parse
-from sp_api.base import Client, Marketplaces, sp_endpoint, ApiResponse
+from sp_api.base import Client, ApiResponse
+from sp_api.base import sp_endpoint, fill_query_params
 
 
 class Products(Client):
@@ -104,12 +105,53 @@ class Products(Client):
 
         """
         return self._create_get_pricing_request(asin_list, 'Asin', **kwargs)
+    
+    @sp_endpoint('/products/pricing/v0/listings/{}/offers', method='GET')
+    def get_listing_offers(self, sku: str, **kwargs) -> ApiResponse:
+        """
+        get_listing_offers(self, sku, **kwargs) -> ApiResponse
+        Returns the lowest priced offers for a single SKU listing.
+
+        **Usage Plan:**
+
+        ======================================  ==============
+        Rate (requests per second)               Burst
+        ======================================  ==============
+        5                                       10        
+        ======================================  ==============
+
+        :param sku: str
+        :param kwargs:
+        """
+        if 'ItemCondition' not in kwargs:
+            kwargs.update({'ItemCondition':'New'})
+        return self._request(fill_query_params(kwargs.pop('path'),sku), params=kwargs)
+    
+    @sp_endpoint('/products/pricing/v0/items/{}/offers',method='GET')
+    def get_item_offers(self, asin: str, **kwargs):
+        """
+        get_item_offers(self, asin, **kwargs) -> ApiResponse
+        Returns the lowest priced offers for a single item based on ASIN.
+
+        **Usage Plan:**
+
+        ======================================  ==============
+        Rate (requests per second)               Burst
+        ======================================  ==============
+        5                                       10        
+        ======================================  ==============
+
+        :param asin: str
+        :param kwargs:
+        """
+        if 'ItemCondition' not in kwargs:
+            kwargs.update({'ItemCondition':'New'})
+        return self._request(fill_query_params(kwargs.pop('path'), asin), params=kwargs)
 
     def _create_get_pricing_request(self, item_list, item_type, **kwargs):
         return self._request(kwargs.pop('path'),
                              params={**{f"{item_type}s": ','.join(
                                  [urllib.parse.quote_plus(s) for s in item_list])},
                                      'ItemType': item_type,
-                                     **({'ItemCondition': kwargs.pop(
-                                         'ItemCondition')} if 'ItemCondition' in kwargs else {}),
+                                     **({'ItemCondition': kwargs.pop('ItemCondition')} if 'ItemCondition' in kwargs else {}),
                                      'MarketplaceId': kwargs.get('MarketplaceId', self.marketplace_id)})

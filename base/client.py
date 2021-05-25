@@ -9,7 +9,6 @@ from requests import request
 from sp_api.auth import AccessTokenClient, AccessTokenResponse
 from .ApiResponse import ApiResponse
 from .base_client import BaseClient
-from .exceptions import get_exception_for_code, SellingApiBadRequestException
 from .marketplaces import Marketplaces
 from sp_api.base import AWSSigV4
 
@@ -106,7 +105,6 @@ class Client(BaseClient):
     def _check_response(res) -> ApiResponse:
         error = res.json().get('errors', None)
         if error:
-            exception = get_exception_for_code(res.status_code)
             print(error)
             # raise exception(error)
         obj = ApiResponse(**res.json(), headers=res.headers)
